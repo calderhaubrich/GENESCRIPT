@@ -54,7 +54,7 @@ def pfileplott(l,types):
     plt.title("Temperatures of Electrons and Ions")
 
 
-d = 'Density'
+n = 'Density'
 pfileplotd(chunked_list[0],d)
 pfileplotd(chunked_list[2],d)
 plt.grid()
