@@ -55,8 +55,8 @@ def pfileplott(l,types):
 
 
 n = 'Density'
-pfileplotd(chunked_list[0],d)
-pfileplotd(chunked_list[2],d)
+pfileplotd(chunked_list[0],n)
+pfileplotd(chunked_list[2],n)
 plt.grid()
 plt.show()
 
