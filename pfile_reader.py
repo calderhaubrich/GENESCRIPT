@@ -58,6 +58,7 @@ def main(args):
 
     if (args.all):
         fig1 = plt.figure()
+        #TODO: Store these strings in some global arrays at the top, matching the indices passed in and the data indices.
         n = 'Density (n[10^20/m^3])'
         nt = 'Densities of Electrons and Ions'
         pfileplot(chunked_list[0],n,nt,'ne')
