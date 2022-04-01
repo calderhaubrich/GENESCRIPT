@@ -33,7 +33,7 @@ def ReadPfile(filepath):
             chunked_list.append(pfilecon[j:j+chunk_size])
         if len(pfilecon[j][0]) > 3:
             chunked_list.append(pfilecon[j:j+4])
-    return chunked_list, NZA
+    return chunked_list
 
 #Plot Profiles Function#
 #TODO: Clean up variable names.
