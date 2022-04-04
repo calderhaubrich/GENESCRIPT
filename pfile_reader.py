@@ -4,6 +4,7 @@ import argparse
 import matplotlib.pyplot as plt
 import sys
 import glob
+from matplotlib import cm
 from tabulate import tabulate
 
 n = 'Density (n[10^20/m^3])'
@@ -17,7 +18,6 @@ v = 'Velocity (km/s)'
 
 def ReadPfile(filepath):
     #TODO: Add check on the filepath.
-
     #File Converter#
     pfile = filepath.readlines()
     pfilecon = []
@@ -59,8 +59,6 @@ def main(args):
     parser.add_argument('-l', '--list', nargs='*', help='List of indices for data to plot.') #TODO: Take a list of which data to plot.
     parser.add_argument('-a', '--all', default=False, action='store_true', help='Plot everything at once.')
     parser.add_argument('-c', '--comparison', default=False, action='store_true', help='Plot comparison of all pfiles.')
-    #parser.add_argument('-n', '--nza',  default=False, action='store_true', help='Gives information on Spieces.')
-    #TODO: How to handle species??? Maybe not a big deal.
     args = parser.parse_args(args)
 
     #TODO: If no arguments passed
@@ -68,6 +66,82 @@ def main(args):
     #else, check file exists and handle the optional flags.
 
     chunked_list = ReadPfile(args.file)
+
+    if (args.all):
+        pfileplot(chunked_list[0],n,'ne')
+        plt.show()
+
+        pfileplot(chunked_list[1],t,'te')
+        plt.show()
+
+        pfileplot(chunked_list[2],n,'ni')
+        plt.show()
+
+        pfileplot(chunked_list[3],t,'ti')
+        plt.show()
+
+        pfileplot(chunked_list[4],n,'nb')
+        plt.show()
+
+        pfileplot(chunked_list[5],p,'pb')
+        plt.show()
+
+        pfileplot(chunked_list[6],p,'ptot')
+        plt.show()
+
+        pfileplot(chunked_list[7],o,'omeg')
+        plt.show()
+
+        pfileplot(chunked_list[8],o,'omegp')
+        plt.show()
+
+        pfileplot(chunked_list[9],o,'omgvb')
+        plt.show()
+
+        pfileplot(chunked_list[10],o,'omgpp')
+        plt.show()
+
+        pfileplot(chunked_list[11],o,'omgeb')
+        plt.show()
+
+        pfileplot(chunked_list[12],o,'ommvb')
+        plt.show()
+
+        pfileplot(chunked_list[13],o,'ommpp')
+        plt.show()
+
+        pfileplot(chunked_list[14],o,'omevb')
+        plt.show()
+
+        pfileplot(chunked_list[15],o,'omepp')
+        plt.show()
+
+        pfileplot(chunked_list[16],e,'er')
+        plt.show()
+
+        pfileplot(chunked_list[17],k,'kpol')
+        plt.show()
+
+        pfileplot(chunked_list[18],n,'nz1')
+        plt.show()
+
+        pfileplot(chunked_list[19],v,'vtorl')
+        plt.show()
+
+        pfileplot(chunked_list[20],v,'vpol1')
+        plt.show()
+        
+        pfileplot(chunked_list[0],n,'ne')
+        pfileplot(chunked_list[2],n,'ni')
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+        pfileplot(chunked_list[1],t,'Te')
+        pfileplot(chunked_list[3],t,'Ti')
+        plt.grid()
+        plt.legend()
+        plt.show()
 
     if (args.comparison):
         unfiles = glob.glob('p163241.*')
@@ -222,111 +296,92 @@ def main(args):
     #TODO: Store these strings in some global arrays at the top, matching the indices passed in and the data indices.
 
     if (args.list):
-        for element in args.list:
-            if int(element) == (0 or 2 or 4 or 18):
+        lists = args.list
+        for element in lists:
+            if float(element) == 0:
                 listlabel = n
                 pfileplot(chunked_list[int(element)],listlabel,'ne')
                 plt.show()
-            if int(element) == (1 or 3):
+            if float(element) == 1:
                 listlabel = t
-                pfileplot(chunked_list[int(element)],listlabel,'ne')
+                pfileplot(chunked_list[int(element)],listlabel,'te')
                 plt.show()
-            if int(element) == (5 or 6):
+            if float(element) == 2:
+                listlabel = n
+                pfileplot(chunked_list[int(element)],listlabel,'ni')
+                plt.show()
+            if float(element) == 3:
+                listlabel = t
+                pfileplot(chunked_list[int(element)],listlabel,'ti')
+                plt.show()
+            if float(element) == 4:
+                listlabel = n
+                pfileplot(chunked_list[int(element)],listlabel,'nb')
+                plt.show()
+            if float(element) == 5:
                 listlabel = p
-                pfileplot(chunked_list[int(element)],listlabel,'ne')
+                pfileplot(chunked_list[int(element)],listlabel,'pb')
                 plt.show()
-            if int(element) == (7 or 8 or 9 or 10 or 11 or 12 or 13 or 14 or 15):
+            if float(element) == 6:
+                listlabel = p
+                pfileplot(chunked_list[int(element)],listlabel,'ptot')
+                plt.show()
+            if float(element) == 7:
                 listlabel = o
-                pfileplot(chunked_list[int(element)],listlabel,'ne')
+                pfileplot(chunked_list[int(element)],listlabel,'omeg')
                 plt.show()
-            if int(element) == 16:
+            if float(element) == 8:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'omegp')
+                plt.show()
+            if float(element) == 9:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'omgvb')
+                plt.show()
+            if float(element) == 10:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'omgpp')
+                plt.show()
+            if float(element) == 11:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'omgeb')
+                plt.show()
+            if float(element) == 12:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'ommvb')
+                plt.show()
+            if float(element) == 13:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'ommpp')
+                plt.show()
+            if float(element) == 14:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'omevb')
+                plt.show()
+            if float(element) == 15:
+                listlabel = o
+                pfileplot(chunked_list[int(element)],listlabel,'omepp')
+                plt.show()
+            if float(element) == 16:
                 listlabel = e
-                pfileplot(chunked_list[int(element)],listlabel,'ne')
+                pfileplot(chunked_list[int(element)],listlabel,'er')
                 plt.show()
-            if int(element) == 17:
+            if float(element) == 17:
                 listlabel = k
-                pfileplot(chunked_list[int(element)],listlabel,'ne')
+                pfileplot(chunked_list[int(element)],listlabel,'kpol')
                 plt.show()
-            if int(element) == (19 or 20):
+            if float(element) == 18:
+                listlabel = n
+                pfileplot(chunked_list[int(element)],listlabel,'nzl')
+                plt.show()
+            if float(element) == 19:
                 listlabel = v
-                pfileplot(chunked_list[int(element)],listlabel,'ne')
+                pfileplot(chunked_list[int(element)],listlabel,'vtor1')
                 plt.show()
-    
-    if (args.all):
-        pfileplot(chunked_list[0],n,'ne')
-        plt.show()
-
-        pfileplot(chunked_list[1],t,'Te')
-        plt.show()
-
-        pfileplot(chunked_list[2],n,'ni')
-        plt.show()
-
-        pfileplot(chunked_list[3],t,'Ti')
-        plt.show()
-
-        pfileplot(chunked_list[4],n,'nb')
-        plt.show()
-
-        pfileplot(chunked_list[5],p,'pb')
-        plt.show()
-
-        pfileplot(chunked_list[6],p,'ptot')
-        plt.show()
-
-        pfileplot(chunked_list[7],o,'omeg')
-        plt.show()
-
-        pfileplot(chunked_list[8],o,'omegp')
-        plt.show()
-
-        pfileplot(chunked_list[9],o,'omgvb')
-        plt.show()
-
-        pfileplot(chunked_list[10],o,'omgpp')
-        plt.show()
-
-        pfileplot(chunked_list[11],o,'omgeb')
-        plt.show()
-
-        pfileplot(chunked_list[12],o,'ommvb')
-        plt.show()
-
-        pfileplot(chunked_list[13],o,'ommpp')
-        plt.show()
-
-        pfileplot(chunked_list[14],o,'omevb')
-        plt.show()
-
-        pfileplot(chunked_list[15],o,'omepp')
-        plt.show()
-
-        pfileplot(chunked_list[16],e,'er')
-        plt.show()
-
-        pfileplot(chunked_list[17],k,'kpol')
-        plt.show()
-
-        pfileplot(chunked_list[18],n,'nz1')
-        plt.show()
-
-        pfileplot(chunked_list[19],v,'vtorl')
-        plt.show()
-
-        pfileplot(chunked_list[20],v,'vpol1')
-        plt.show()
-        
-        pfileplot(chunked_list[0],n,'ne')
-        pfileplot(chunked_list[2],n,'ni')
-        plt.grid()
-        plt.legend()
-        plt.show()
-
-        pfileplot(chunked_list[1],t,'Te')
-        pfileplot(chunked_list[3],t,'Ti')
-        plt.grid()
-        plt.legend()
-        plt.show()
+            if float(element) == 20:
+                listlabel = v
+                pfileplot(chunked_list[int(element)],listlabel,'vpol1')
+                plt.show()
 
 
 if __name__ == "__main__":
