@@ -4,7 +4,6 @@ import argparse
 import matplotlib.pyplot as plt
 import sys
 import glob
-from matplotlib import cm
 from tabulate import tabulate
 
 n = 'Density (n[10^20/m^3])'
@@ -37,14 +36,14 @@ def ReadPfile(filepath):
 
 #Plot Profiles Function#
 #TODO: Clean up variable names.
-def pfileplot(l,types,plotlabel):
-    titles = l[0]
-    del l[0]
+def pfileplot(heads,types,plotlabel):
+    titles = heads[0]
+    del heads[0]
     x=[]
     y=[]
-    for nh in range(len(l)):
-        x.append(float(l[nh][0]))
-        y.append(float(l[nh][1]))
+    for pos in range(len(heads)):
+        x.append(float(heads[pos][0]))
+        y.append(float(heads[pos][1]))
     plt.xlabel(titles[1])
     plt.ylabel(types)
     plt.plot(x,y,label=plotlabel)
@@ -56,14 +55,46 @@ def pfileplot(l,types,plotlabel):
 def main(args):
     parser = argparse.ArgumentParser(description='Reads pfile input and plots species.')
     parser.add_argument('file', type=argparse.FileType('r'), default='p163241.03500_e0514', help='input some pfile')
-    parser.add_argument('-l', '--list', nargs='*', help='List of indices for data to plot.') #TODO: Take a list of which data to plot.
+    parser.add_argument('-l', '--list', nargs='*', help='List of indices for data to plot.')
     parser.add_argument('-a', '--all', default=False, action='store_true', help='Plot everything at once.')
     parser.add_argument('-c', '--comparison', default=False, action='store_true', help='Plot comparison of all pfiles.')
+    parser.add_argument('-i','--info', default=False, action='store_true', help='gives documentation on plots')
     args = parser.parse_args(args)
 
-    #TODO: If no arguments passed
-    #CALL pfile_comparison function.
-    #else, check file exists and handle the optional flags.
+    if (args.info):
+        print("""
+        This code plots pfile species for case 163241.03500.
+
+        Input: -a or --all
+        Plots all species
+        
+        Input: -c or --comparison
+        Plots all species together over all time stamps
+
+        Input: -l or --list
+        Input list data: 0 1 2 3 4 etc...
+        0  = ne
+        1  = te
+        2  = ni
+        3  = ti
+        4  = nb
+        5  = pb
+        6  = ptot
+        7  = omeg
+        8  = omegp
+        9  = omgvb
+        10 = omgpp
+        11 = omgeb
+        12 = ommvb
+        13 = ommpp
+        14 = omevb
+        15 = omepp
+        16 = er
+        17 = kpol
+        18 = nzl
+        19 = vtor1
+        20 = vpol1
+        """)
 
     chunked_list = ReadPfile(args.file)
 
