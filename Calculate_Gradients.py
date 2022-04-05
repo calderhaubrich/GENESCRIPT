@@ -14,6 +14,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 
+
 plt.rcParams.update({'font.size':14})
 
 proffpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/p163241.03500_e5059'
@@ -21,41 +22,57 @@ proffpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/p163241.03500_e5059
 def main(args):
     parser = argparse.ArgumentParser(description='Calculates gradients at given rhotor position.')
     parser.add_argument('file', help='input some gfile')
+    parser.add_argument('location', help='rhotor location')
     parser.add_argument('-r','--rho', default=False, action='store_true', help='Finds rho gradients')
     parser.add_argument('-m','--miller',default=False, action='store_true', help='Plots with miller r')
-    parser.add_argument('location', help='rhotor location')
     parser.add_argument('-a','--all', default=False, action='store_true', help='Plot species with respect to rhotor')
+    parser.add_argument('-i','--info', default=False, action='store_true', help='Provides info on code')
     args = parser.parse_args(args)
 
     efitfpath = args.file
     rho_tr = float(args.location)
+
+    setparam = {'nrhomesh':'rhotor'}
+
+    efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
+    specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
+
+
+    rhotor= np.array(specprof['rhotor'])
+
+    Te= np.array(specprof['Te'])
+    Ti= np.array(specprof['Ti'])
+    ne= np.array(specprof['ne'])
+    ni= np.array(specprof['ni'])
+    nb= np.array(specprof['nb'])
+    nc= np.array(specprof['nz'])
+    Pb= np.array(specprof['Pb'])
+    Vtor= np.array(specprof['Vtor'])
+    Vpol= np.array(specprof['Vpol'])
+    Ptot= np.array(specprof['pressure'])
+    q= np.array(efitprof['q'])
+    Tb= (Pb/nb)*(1/(1.6*10e-19))
+
+    if (args.info):
+        print("""
+        This code is used to calculate gradients with respect to major radius, plot species with respect to rhotor,
+        and plots miller_r relationship.
+
+        Input: -r or --rho
+        Returns gradient values with respect to major radius R0.
+
+        Input: -a or --all
+        Returns plots of species with respect to rhotor
+
+        Input: -m or --miller
+        Returns miller_r to rhotor relationship
+        """)
 
     if (args.rho):
         geomdata = millergeometryfunction.finder(efitfpath,rho_tr)
         R0 = geomdata[0]
         a  = geomdata[1]
         drho_tor_dr = geomdata[2]
-
-        setparam = {'nrhomesh':'rhotor'}
-
-        efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
-        specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
-
-
-        rhotor= np.array(specprof['rhotor'])
-
-        Te= np.array(specprof['Te'])
-        Ti= np.array(specprof['Ti'])
-        ne= np.array(specprof['ne'])
-        ni= np.array(specprof['ni'])
-        nb= np.array(specprof['nb'])
-        nc= np.array(specprof['nz'])
-        Pb= np.array(specprof['Pb'])
-        Vtor= np.array(specprof['Vtor'])
-        Vpol= np.array(specprof['Vpol'])
-        Ptot= np.array(specprof['pressure'])
-        q= np.array(efitprof['q'])
-        Tb= (Pb/nb)*(1/(1.6*10e-19))
 
         interpol_order = 3
 
@@ -153,39 +170,23 @@ def main(args):
     if (args.miller):
         mill = miller.findmiller(efitfpath)
         rad = mill[0]
-    setparam = {'nrhomesh':'rhotor'}
+        setparam = {'nrhomesh':'rhotor'}
 
-    efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
-    specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
-    rhopsi = np.array(specprof['rhopsi'])
-    rhotor = np.array(specprof['rhotor'])
+        efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
+        specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
+        rhopsi = np.array(specprof['rhopsi'])
+        rhotor = np.array(specprof['rhotor'])
 
-
-    Te= np.array(specprof['Te'])
-    Ti= np.array(specprof['Ti'])
-    ne= np.array(specprof['ne'])
-    ni= np.array(specprof['ni'])
-    nb= np.array(specprof['nb'])
-    nc= np.array(specprof['nz'])
-    Pb= np.array(specprof['Pb'])
-    Vtor= np.array(specprof['Vtor'])
-    Vpol= np.array(specprof['Vpol'])
-    Ptot= np.array(specprof['pressure'])
-    q= np.array(efitprof['q'])
-
-    plt.figure()
-    #plt.plot(rhotor,ne)
-    #plt.plot(rad,ne)
-    plt.plot(rad,rhotor, linewidth=3.0)
-    plt.ylabel('r/a', fontsize=16)
-    plt.xlabel('$\\rho_{tor}$', fontsize=16)
-    plt.grid()
-    plt.show()
+        plt.figure()
+        plt.plot(rad,rhotor, linewidth=3.0)
+        plt.ylabel('r/a', fontsize=16)
+        plt.xlabel('$\\rho_{tor}$', fontsize=16)
+        plt.grid()
+        plt.show()
 
     if (args.all):
         # Ion temperature plot
         plt.figure()
-        plt.title('Ion Temperature')
         plt.plot(rhotor,Ti, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("T$_i$(eV)", fontsize=16)
@@ -195,7 +196,6 @@ def main(args):
 
         # Fast Ion temperature plot
         plt.figure()
-        plt.title('Fast Ion Temperature')
         plt.plot(rhotor,Tb, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("T$_b$(eV)", fontsize=16)
@@ -207,7 +207,6 @@ def main(args):
 
         # Electron temperature plot
         plt.figure()
-        plt.title('Electron Temperature')
         plt.plot(rhotor,Te, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("T$_e$(eV)", fontsize=16)
@@ -218,7 +217,6 @@ def main(args):
 
         # Electron and ion temperature profiles plot
         plt.figure()
-        plt.title('Electron and Ion Temperature')
         plt.plot(rhotor,Te, linewidth=3.0)
         plt.plot(rhotor,Ti, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
@@ -231,7 +229,6 @@ def main(args):
 
         # electron density plot
         plt.figure()
-        plt.title('Electron Density')
         plt.plot(rhotor,ne, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("n$_e (m^{-3})$", fontsize=16)
@@ -241,7 +238,6 @@ def main(args):
 
         # Ion density plot
         plt.figure()
-        plt.title('Ion Density')
         plt.plot(rhotor,ni, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("n$_i (m^{-3})$", fontsize=16)
@@ -251,7 +247,6 @@ def main(args):
 
         # NBI fast Ion density plot
         plt.figure()
-        plt.title('NBI Fast Ion Density')
         plt.plot(rhotor,nb, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$",fontsize=16 )
         plt.ylabel("n$_b (m^{-3})$", fontsize=16)
@@ -261,7 +256,6 @@ def main(args):
 
         # NBI fast Ion density plot
         plt.figure()
-        plt.title('NBI Fast Ion Density')
         plt.plot(rhotor,Pb, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("P$_b (m^{-3})$", fontsize=16)
@@ -271,7 +265,6 @@ def main(args):
 
         # Pressure profiles plot
         plt.figure()
-        plt.title('Pressure Profiles')
         plt.plot(rhotor,Ptot, linewidth=3.0)
         plt.plot(rhotor,Pb, linewidth=3.0)
         plt.plot(rhotor,Ptot-Pb, linewidth=3.0)
@@ -285,7 +278,6 @@ def main(args):
 
         # Carbon density plot
         plt.figure()
-        plt.title('Carbon Density')
         plt.plot(rhotor,nc, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("n$_C (m^{-3})$",  fontsize=16)
@@ -295,7 +287,6 @@ def main(args):
 
         # Toroidal rotataion velocity
         plt.figure()
-        plt.title('Toroidal Rotation Velocity')
         plt.plot(rhotor,Vtor, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("V$_{tor}$ (m/s)",fontsize=16 )
@@ -305,7 +296,6 @@ def main(args):
 
         # Safety factor plot
         plt.figure()
-        plt.title('Safety Factor')
         plt.plot(rhotor,q, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("Safety factor (q)", fontsize=16)
@@ -315,7 +305,6 @@ def main(args):
 
         # electron and ion density plot
         plt.figure()
-        plt.title('Electron and Ion Density')
         plt.plot(rhotor,ne, linewidth=3.0)
         plt.plot(rhotor,ni, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
