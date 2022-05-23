@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import cheasefiles
@@ -50,9 +49,11 @@ def main(args):
     Vtor= np.array(specprof['Vtor'])
     Vpol= np.array(specprof['Vpol'])
     Ptot= np.array(specprof['pressure'])
+    omeg = np.array(specprof['omeg'])
     q= np.array(efitprof['q'])
     Tb= (Pb/nb)*(1/(1.6*10e-19))
 
+    #Code Information and Short Cuts#
     if (args.info):
         print("""
         This code is used to calculate gradients with respect to major radius, plot species with respect to rhotor,
@@ -68,6 +69,7 @@ def main(args):
         Returns miller_r to rhotor relationship
         """)
 
+    #Gradient Calculator with respect to rhotor#
     if (args.rho):
         geomdata = millergeometryfunction.finder(efitfpath,rho_tr)
         R0 = geomdata[0]
@@ -85,6 +87,7 @@ def main(args):
         pb_spl = InterpolatedUnivariateSpline(rhotor, Pb, k=interpol_order)
         vtor_spl = InterpolatedUnivariateSpline(rhotor, Vtor, k=interpol_order)
         Ptot_spl = InterpolatedUnivariateSpline(rhotor, Ptot, k=interpol_order)
+        omeg_spl = InterpolatedUnivariateSpline(rhotor, omeg, k=interpol_order)
 
         dnedrho_spl = ne_spl.derivative()
         dnidrho_spl = ni_spl.derivative()
@@ -121,7 +124,7 @@ def main(args):
         tref_tr= ti_spl(rho_tr)     # main ion tempeartrure as reference temperature at target location
 
         vtor_tr= vtor_spl(rho_tr)     # toroidal rotation velocity m/s at reference location
-        #omeg_tr= omeg_spl(rho_tr)    # toroidal rotation frequency in rad/sec at reference location
+        omeg_tr= omeg_spl(rho_tr)    # toroidal rotation frequency in rad/sec at reference location
 
         ne_tr= ne_spl(rho_tr)/nref_tr
         ni_tr= ni_spl(rho_tr)/nref_tr
@@ -166,7 +169,22 @@ def main(args):
         print('omte_tr    = {}'.format(omte_tr))
         print('omti_tr    = {}'.format(omti_tr))
         print('omtb_tr    = {}'.format(omtb_tr))
+        print('omnc_tr    = {}'.format(omnc_tr))
 
+        print('nref_tr    = {}'.format(nref_tr))
+        print('tref_tr    = {}'.format(tref_tr))
+        print('nc_tr      = {}'.format(nc_tr))
+        print('ne_tr      = {}'.format(ne_tr))
+        print('ni_tr      = {}'.format(ni_tr))
+        print('te_tr      = {}'.format(te_tr))
+        print('ti_tr      = {}'.format(ti_tr))
+
+        print('me_tr      = {}'.format(me_tr))
+        print('mD_tr      = {}'.format(mD_tr))
+
+        print('omeg_tr    = {}'.format(omeg_tr*1000))
+
+    #Miller Geometery Relationship to rhotor#
     if (args.miller):
         mill = miller.findmiller(efitfpath)
         rad = mill[0]
@@ -184,6 +202,7 @@ def main(args):
         plt.grid()
         plt.show()
 
+    #Species Plots with Respect to rhotor#
     if (args.all):
         # Ion temperature plot
         plt.figure()
