@@ -1,4 +1,5 @@
 # GENESCRIPT
+File directories must be changed in all called functions for resolution
 ## Calculate_Gradients
 Input g-file and rho_tor location. Used for gradient calculation with respect to rho_tor, plotting species with respect to rhotor, and plotting relationship between miller_r and rho_tor.
 ## pfile_reader
