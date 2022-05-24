@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import cheasefiles
@@ -163,13 +164,13 @@ def main(args):
 
         print('Location   = {}'.format(rho_tr))
 
-        print('omne_tr    = {}'.format(omne_tr))
-        print('omni_tr    = {}'.format(omni_tr))
-        print('omnb_tr    = {}'.format(omnb_tr))
-        print('omte_tr    = {}'.format(omte_tr))
-        print('omti_tr    = {}'.format(omti_tr))
-        print('omtb_tr    = {}'.format(omtb_tr))
-        print('omnc_tr    = {}'.format(omnc_tr))
+        print('omne_tr    = {}'.format(omne_tr[0]))
+        print('omni_tr    = {}'.format(omni_tr[0]))
+        print('omnb_tr    = {}'.format(omnb_tr[0]))
+        print('omte_tr    = {}'.format(omte_tr[0]))
+        print('omti_tr    = {}'.format(omti_tr[0]))
+        print('omtb_tr    = {}'.format(omtb_tr[0]))
+        print('omnc_tr    = {}'.format(omnc_tr[0]))
 
         print('nref_tr    = {}'.format(nref_tr))
         print('tref_tr    = {}'.format(tref_tr))
@@ -183,6 +184,7 @@ def main(args):
         print('mD_tr      = {}'.format(mD_tr))
 
         print('omeg_tr    = {}'.format(omeg_tr*1000))
+        import extract_miller_from_eqdsk
 
     #Miller Geometery Relationship to rhotor#
     if (args.miller):
