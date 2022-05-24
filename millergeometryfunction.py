@@ -11,18 +11,6 @@ import matplotlib.pyplot as plt
 from sys import exit, stdout
 import optparse as op
 import sys
-import cheasefiles
-
-efitfpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/g163241.03500'
-proffpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/p163241.03500_e5059'
-
-
-
-setparam = {'nrhomesh':'rhotor'}
-
-efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
-specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
-
 
 
 def finder(gfile,location):
@@ -479,8 +467,7 @@ def finder(gfile,location):
         f.write('#r/a    rho_tor\n')
         for i in range(0, nw):
             f.write('%16.8e %16.8e\n'%(ravg_spl(linpsi[i])/r_avg[-1], rho_tor_spl(linpsi[i])))
-
     #if show_plots:
         #fig.tight_layout()
         #plt.show()
-    return LrefR0, Lrefa, drho_tor_dr
+    return LrefR0, Lrefa, drho_tor_dr, r, r_a
