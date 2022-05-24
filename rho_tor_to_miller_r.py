@@ -10,13 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sys import exit, stdout
 import optparse as op
-import cheasefiles
 
-efitfpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/g163241.03500'
-proffpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/p163241.03500_e5059'
-setparam = {'nrhomesh':'rhotor'}
-efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
-specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
 
 def findmiller(gfile):
     nr = 120
@@ -493,6 +487,3 @@ def findmiller(gfile):
 
     #Gradient Calculation
     return r_a, dpsi_dr, drho_tor_dr,rho_tor
-
-#print(findmiller(efitfpath)[0])
-#print(findmiller(efitfpath)[3])
