@@ -8,9 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import argparse
-from scipy.interpolate import RectBivariateSpline
-from scipy.interpolate import interp1d
-from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 
@@ -54,6 +51,104 @@ def main(args):
     q= np.array(efitprof['q'])
     Tb= (Pb/nb)*(1/(1.6*10e-19))
 
+    geomdata = millergeometryfunction.finder(efitfpath,rho_tr)
+    R0 = geomdata[0]
+    a  = geomdata[1]
+    drho_tor_dr = geomdata[2]
+    Bref = geomdata[8]
+
+    geomiller = miller.findmiller(efitfpath)
+    Bref_tr   = geomiller[4]
+    Lref_tr   = geomiller[5]
+
+    interpol_order = 3
+
+    ne_spl = InterpolatedUnivariateSpline(rhotor, ne, k=interpol_order)
+    ni_spl = InterpolatedUnivariateSpline(rhotor, ni, k=interpol_order)
+    nb_spl = InterpolatedUnivariateSpline(rhotor, nb, k=interpol_order)
+    te_spl = InterpolatedUnivariateSpline(rhotor, Te, k=interpol_order)
+    ti_spl = InterpolatedUnivariateSpline(rhotor, Ti, k=interpol_order)
+    tb_spl = InterpolatedUnivariateSpline(rhotor, Tb, k=interpol_order)
+    pb_spl = InterpolatedUnivariateSpline(rhotor, Pb, k=interpol_order)
+    vtor_spl = InterpolatedUnivariateSpline(rhotor, Vtor, k=interpol_order)
+    Ptot_spl = InterpolatedUnivariateSpline(rhotor, Ptot, k=interpol_order)
+    omeg_spl = InterpolatedUnivariateSpline(rhotor, omeg, k=interpol_order)
+
+    dnedrho_spl = ne_spl.derivative()
+    dnidrho_spl = ni_spl.derivative()
+    dnbdrho_spl = nb_spl.derivative()
+    dtedrho_spl = te_spl.derivative()
+    dtidrho_spl = ti_spl.derivative()
+    dtbdrho_spl = tb_spl.derivative()
+    dpbdrho_spl = pb_spl.derivative()
+    dvtordrho_spl = vtor_spl.derivative()   
+
+    dnedrho = dnedrho_spl(rhotor)
+    dnidrho = dnidrho_spl(rhotor)
+    dnbdrho = dnbdrho_spl(rhotor)
+    dtedrho = dtedrho_spl(rhotor)
+    dtidrho = dtidrho_spl(rhotor)
+    dtbdrho = dtbdrho_spl(rhotor)
+    dpbdrho = dpbdrho_spl(rhotor)
+    dvtordrho = dvtordrho_spl(rhotor)
+    #domegarho = domegdrho_spl(rhotor)
+
+    #dvpolrho = dvpoldrho_spl(rhotor)
+
+
+    # Normalized paramters at target toroidal radial location
+    Z0= 0.0031727/R0
+    mD= 3.343583719e-27         # Mass of deuterium in kg
+    m_ref= mD                   # Deuteriam mass as reference mass
+    mD_tr= mD/m_ref             # Normalized deuterium mass
+    me= 9.10938356e-31          # Mass of electron in SI Units (kg)
+    me_tr= me/m_ref             # Normalized electron mass
+    #n_ref= ne_spl(rhotor)      # reference temparture as function of rhotor
+    t_ref= ti_spl(rhotor) 
+    nref_tr= ne_spl(rho_tr)     # Electron density as refernce density at target location
+    tref_tr= ti_spl(rho_tr)     # main ion tempeartrure as reference temperature at target location
+
+    vtor_tr= vtor_spl(rho_tr)   # toroidal rotation velocity m/s at reference location
+    omeg_tr= omeg_spl(rho_tr)   # toroidal rotation frequency in rad/sec at reference location
+
+    ne_tr= ne_spl(rho_tr)/nref_tr
+    ni_tr= ni_spl(rho_tr)/nref_tr
+    nb_tr= nb_spl(rho_tr)/nref_tr
+
+    te_tr= te_spl(rho_tr)/tref_tr
+    ti_tr= ti_spl(rho_tr)/tref_tr
+    tb_tr= tb_spl(rho_tr)/tref_tr
+
+
+    #Calculate Gradients with respect to major radius R0
+    omne_tr= dnedrho_spl(rho_tr)*[-R0/ne_spl(rho_tr)]*drho_tor_dr #omne_tr = -(Lref/n)(dn/drho)
+    omni_tr= dnidrho_spl(rho_tr)*[-R0/ni_spl(rho_tr)]*drho_tor_dr
+    omnb_tr= dnbdrho_spl(rho_tr)*[-R0/nb_spl(rho_tr)]*drho_tor_dr
+    omte_tr= dtedrho_spl(rho_tr)*[-R0/te_spl(rho_tr)]*drho_tor_dr
+    omti_tr= dtidrho_spl(rho_tr)*[-R0/ti_spl(rho_tr)]*drho_tor_dr
+    omtb_tr= dtbdrho_spl(rho_tr)*[-R0/tb_spl(rho_tr)]*drho_tor_dr
+
+    # To calculate ion density when no Carbon impurity present
+    #nc_tr= 0
+    #omnc_tr=0
+    #ni_tr=(ne_tr-6*nc_tr);
+    #omni_tr= (ne_tr*omne_tr- 6*nc_tr*omnc_tr)/ni_tr;
+
+    # Carboon density profile from the quasineutrality condition
+    nc_tr=(ne_tr - ni_tr)/6
+    omnc_tr =(ne_tr*omne_tr -ni_tr*omni_tr)/(6*nc_tr)
+
+    rho_star = (m_ref*np.sqrt(tref_tr/m_ref))/(Bref*R0) #Gyroradius-to-machine-size ratio at reference location
+    rho_star_tr = (m_ref*np.sqrt(t_ref/m_ref))/(Bref_tr*Lref_tr)
+
+    #Calculate Gradients with respect to minor radius a
+    omne = dnedrho_spl(rho_tr)*[-a/ne_spl(rho_tr)]*drho_tor_dr
+    omni = dnidrho_spl(rho_tr)*[-a/ni_spl(rho_tr)]*drho_tor_dr
+    omnb = dnbdrho_spl(rho_tr)*[-a/nb_spl(rho_tr)]*drho_tor_dr
+    omte = dtedrho_spl(rho_tr)*[-a/te_spl(rho_tr)]*drho_tor_dr
+    omti = dtidrho_spl(rho_tr)*[-a/ti_spl(rho_tr)]*drho_tor_dr
+    omtb = dtbdrho_spl(rho_tr)*[-a/tb_spl(rho_tr)]*drho_tor_dr
+
     #Code Information and Short Cuts#
     if (args.info):
         print("""
@@ -72,95 +167,6 @@ def main(args):
 
     #Gradient Calculator with respect to rhotor#
     if (args.rho):
-        geomdata = millergeometryfunction.finder(efitfpath,rho_tr)
-        R0 = geomdata[0]
-        a  = geomdata[1]
-        drho_tor_dr = geomdata[2]
-
-        interpol_order = 3
-
-        ne_spl = InterpolatedUnivariateSpline(rhotor, ne, k=interpol_order)
-        ni_spl = InterpolatedUnivariateSpline(rhotor, ni, k=interpol_order)
-        nb_spl = InterpolatedUnivariateSpline(rhotor, nb, k=interpol_order)
-        te_spl = InterpolatedUnivariateSpline(rhotor, Te, k=interpol_order)
-        ti_spl = InterpolatedUnivariateSpline(rhotor, Ti, k=interpol_order)
-        tb_spl = InterpolatedUnivariateSpline(rhotor, Tb, k=interpol_order)
-        pb_spl = InterpolatedUnivariateSpline(rhotor, Pb, k=interpol_order)
-        vtor_spl = InterpolatedUnivariateSpline(rhotor, Vtor, k=interpol_order)
-        Ptot_spl = InterpolatedUnivariateSpline(rhotor, Ptot, k=interpol_order)
-        omeg_spl = InterpolatedUnivariateSpline(rhotor, omeg, k=interpol_order)
-
-        dnedrho_spl = ne_spl.derivative()
-        dnidrho_spl = ni_spl.derivative()
-        dnbdrho_spl = nb_spl.derivative()
-        dtedrho_spl = te_spl.derivative()
-        dtidrho_spl = ti_spl.derivative()
-        dtbdrho_spl = tb_spl.derivative()
-        dpbdrho_spl = pb_spl.derivative()
-        dvtordrho_spl = vtor_spl.derivative()   
-
-        dnedrho = dnedrho_spl(rhotor)
-        dnidrho = dnidrho_spl(rhotor)
-        dnbdrho = dnbdrho_spl(rhotor)
-        dtedrho = dtedrho_spl(rhotor)
-        dtidrho = dtidrho_spl(rhotor)
-        dtbdrho = dtbdrho_spl(rhotor)
-        dpbdrho = dpbdrho_spl(rhotor)
-        dvtordrho = dvtordrho_spl(rhotor)
-        #domegarho = domegdrho_spl(rhotor)
-
-        #dvpolrho = dvpoldrho_spl(rhotor)
-
-
-        # Normalized paramters at target toroidal radial location
-        Z0= 0.0031727/R0
-        mD= 3.343583719e-27         # Mass of deuterium in kg
-        m_ref= mD                   # Deuteriam mass as reference mass
-        mD_tr= mD/m_ref            # Normalized deuterium mass
-        me= 9.10938356e-31          # Mass of electron in SI Units (kg)
-        me_tr= me/m_ref             # Normalized electron mass
-        #n_ref= ne_spl(rhotor)      # reference temparture as function of rhotor
-        #t_ref= ti_spl(rhotor) 
-        nref_tr= ne_spl(rho_tr)     # Electron density as refernce density at target location
-        tref_tr= ti_spl(rho_tr)     # main ion tempeartrure as reference temperature at target location
-
-        vtor_tr= vtor_spl(rho_tr)     # toroidal rotation velocity m/s at reference location
-        omeg_tr= omeg_spl(rho_tr)    # toroidal rotation frequency in rad/sec at reference location
-
-        ne_tr= ne_spl(rho_tr)/nref_tr
-        ni_tr= ni_spl(rho_tr)/nref_tr
-        nb_tr= nb_spl(rho_tr)/nref_tr
-
-        te_tr= te_spl(rho_tr)/tref_tr
-        ti_tr= ti_spl(rho_tr)/tref_tr
-        tb_tr= tb_spl(rho_tr)/tref_tr
-
-
-        #Calculate Gradients with respect to major radius R0
-        omne_tr= dnedrho_spl(rho_tr)*[-R0/ne_spl(rho_tr)]*drho_tor_dr #omne_tr = -(Lref/n)(dn/drho)
-        omni_tr= dnidrho_spl(rho_tr)*[-R0/ni_spl(rho_tr)]*drho_tor_dr
-        omnb_tr= dnbdrho_spl(rho_tr)*[-R0/nb_spl(rho_tr)]*drho_tor_dr
-        omte_tr= dtedrho_spl(rho_tr)*[-R0/te_spl(rho_tr)]*drho_tor_dr
-        omti_tr= dtidrho_spl(rho_tr)*[-R0/ti_spl(rho_tr)]*drho_tor_dr
-        omtb_tr= dtbdrho_spl(rho_tr)*[-R0/tb_spl(rho_tr)]*drho_tor_dr
-
-        # To calculate ion density when no Carbon impurity present
-        #nc_tr= 0
-        #omnc_tr=0
-        #ni_tr=(ne_tr-6*nc_tr);
-        #omni_tr= (ne_tr*omne_tr- 6*nc_tr*omnc_tr)/ni_tr;
-
-        # Carboon density profile from the quasineutrality condition
-        nc_tr=(ne_tr - ni_tr)/6
-        omnc_tr =(ne_tr*omne_tr -ni_tr*omni_tr)/(6*nc_tr)
-
-        #Calculate Gradients with respect to minor radius a
-        omne = dnedrho_spl(rho_tr)*[-a/ne_spl(rho_tr)]*drho_tor_dr
-        omni = dnidrho_spl(rho_tr)*[-a/ni_spl(rho_tr)]*drho_tor_dr
-        omnb = dnbdrho_spl(rho_tr)*[-a/nb_spl(rho_tr)]*drho_tor_dr
-        omte = dtedrho_spl(rho_tr)*[-a/te_spl(rho_tr)]*drho_tor_dr
-        omti = dtidrho_spl(rho_tr)*[-a/ti_spl(rho_tr)]*drho_tor_dr
-        omtb = dtbdrho_spl(rho_tr)*[-a/tb_spl(rho_tr)]*drho_tor_dr
 
         print('Location   = {}'.format(rho_tr))
 
@@ -179,9 +185,11 @@ def main(args):
         print('ni_tr      = {}'.format(ni_tr))
         print('te_tr      = {}'.format(te_tr))
         print('ti_tr      = {}'.format(ti_tr))
+        print('Tref       = {}'.format(tref_tr))
 
         print('me_tr      = {}'.format(me_tr))
         print('mD_tr      = {}'.format(mD_tr))
+        print('rho_star   = {}'.format(rho_star))
 
         print('omeg_tr    = {}'.format(omeg_tr*1000))
         import extract_miller_from_eqdsk
@@ -311,6 +319,15 @@ def main(args):
         plt.plot(rhotor,Vtor, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("V$_{tor}$ (m/s)",fontsize=16 )
+        plt.tight_layout()
+        plt.grid()
+        plt.show()
+
+        #Gyroradius-to-machine-size ratio plot
+        plt.figure()
+        plt.plot(rhotor,rho_star_tr, linewidth=3.0)
+        plt.xlabel("$\\rho_{tor}$", fontsize=16)
+        plt.ylabel("$\\rho_*$", fontsize=16)
         plt.tight_layout()
         plt.grid()
         plt.show()
