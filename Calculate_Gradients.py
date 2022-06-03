@@ -4,13 +4,12 @@
 import cheasefiles
 import millergeometryfunction
 import rho_tor_to_miller_r as miller
+import W_ionization_function as ionize
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import argparse
-from scipy.interpolate import InterpolatedUnivariateSpline
-
-
+from scipy.interpolate import InterpolatedUnivariateSpline, make_interp_spline, BSpline
 
 plt.rcParams.update({'font.size':14})
 
@@ -21,6 +20,7 @@ def main(args):
     parser.add_argument('file', help='input some gfile')
     parser.add_argument('location', help='rhotor location')
     parser.add_argument('-r','--rho', default=False, action='store_true', help='Finds rho gradients')
+    parser.add_argument('-s','--rho_star',default=False, action='store_true', help='Applies scaling factor to profiles')
     parser.add_argument('-m','--miller',default=False, action='store_true', help='Plots with miller r')
     parser.add_argument('-a','--all', default=False, action='store_true', help='Plot species with respect to rhotor')
     parser.add_argument('-i','--info', default=False, action='store_true', help='Provides info on code')
@@ -58,8 +58,8 @@ def main(args):
     Bref = geomdata[8]
 
     geomiller = miller.findmiller(efitfpath)
-    Bref_tr   = geomiller[4]
-    Lref_tr   = geomiller[5]
+    Bref_tr   = geomiller[2]
+    Lref_tr   = geomiller[3]
 
     interpol_order = 3
 
@@ -141,14 +141,6 @@ def main(args):
     rho_star = (m_ref*np.sqrt(tref_tr/m_ref))/(Bref*R0) #Gyroradius-to-machine-size ratio at reference location
     rho_star_tr = (m_ref*np.sqrt(t_ref/m_ref))/(Bref_tr*Lref_tr)
 
-    #Calculate Gradients with respect to minor radius a
-    omne = dnedrho_spl(rho_tr)*[-a/ne_spl(rho_tr)]*drho_tor_dr
-    omni = dnidrho_spl(rho_tr)*[-a/ni_spl(rho_tr)]*drho_tor_dr
-    omnb = dnbdrho_spl(rho_tr)*[-a/nb_spl(rho_tr)]*drho_tor_dr
-    omte = dtedrho_spl(rho_tr)*[-a/te_spl(rho_tr)]*drho_tor_dr
-    omti = dtidrho_spl(rho_tr)*[-a/ti_spl(rho_tr)]*drho_tor_dr
-    omtb = dtbdrho_spl(rho_tr)*[-a/tb_spl(rho_tr)]*drho_tor_dr
-
     #Code Information and Short Cuts#
     if (args.info):
         print("""
@@ -209,6 +201,127 @@ def main(args):
         plt.plot(rad,rhotor, linewidth=3.0)
         plt.ylabel('r/a', fontsize=16)
         plt.xlabel('$\\rho_{tor}$', fontsize=16)
+        plt.grid()
+        plt.show()
+
+    #rho_star Calculation and Scaling of Profiles
+    if (args.rho_star):
+        iter_eqdsk = '/home/calderhaubrich/Workspace/GENESCRIPT/Cheasefiles/eqdsk.DT_15MA_Q10'
+        iterpfile = '/home/calderhaubrich/Workspace/GENESCRIPT/Cheasefiles/ITER_DT_15MA_Q10_peaked_n.txt'
+
+        def ReadPfile(filepath):
+            f     = open(filepath,'r')
+            pfile = f.readlines()
+            del pfile[0:18]
+            rawdata = []
+            for i in range(len(pfile)):
+                row = pfile[i].split()
+                rawdata.append(row)
+            profile_chunks = np.array(rawdata).T.tolist()
+            return profile_chunks #profile_chunks[50] is rho_tor
+
+        def pfileplot(rho,species):
+            xtitles = rho[0]
+            del rho[0]
+            ytitles = species[0]
+            del species[0]
+            x=[]
+            y=[]
+            for pos in range(len(rho)):
+                x.append(float(rho[pos]))
+            for pos2 in range(len(species)):
+                y.append(float(species[pos2]))
+            plt.xlabel(xtitles)
+            plt.ylabel(ytitles)
+            plt.plot(x,y)
+            plt.grid()
+            plt.show()
+
+
+        iter_case = millergeometryfunction.finder(iter_eqdsk, rho_tr)
+        iter_Bref = iter_case[8]
+        iter_Lref = iter_case[0]
+        drho_tor_dr_iter = iter_case[2]
+
+        # Normalized paramters on rhotor grid
+        nref_tor= ne_spl(rhotor)     # Electron density as refernce density on rhotor grid
+        tref_tor= ti_spl(rhotor)     # main ion tempeartrure as reference temperature on rhotor grid
+
+        vtor_tor= vtor_spl(rhotor)   # toroidal rotation velocity m/s on rhotor grid
+        omeg_tor= omeg_spl(rhotor)   # toroidal rotation frequency in rad/sec on rhotor grid
+
+        ne_tor= ne_spl(rhotor)/nref_tor
+        ni_tor= ni_spl(rhotor)/nref_tor
+        nb_tor= nb_spl(rhotor)/nref_tor
+
+        te_tor= te_spl(rhotor)/tref_tor
+        ti_tor= ti_spl(rhotor)/tref_tor
+        tb_tor= tb_spl(rhotor)/tref_tor
+
+        #Calculate Gradients with respect to major radius R0
+        omne_tor= dnedrho_spl(rhotor)*[-R0/ne_spl(rhotor)]*drho_tor_dr #omne_tr = -(Lref/n)(dn/drho)
+        omni_tor= dnidrho_spl(rhotor)*[-R0/ni_spl(rhotor)]*drho_tor_dr
+        omnb_tor= dnbdrho_spl(rhotor)*[-R0/nb_spl(rhotor)]*drho_tor_dr
+        omte_tor= dtedrho_spl(rhotor)*[-R0/te_spl(rhotor)]*drho_tor_dr
+        omti_tor= dtidrho_spl(rhotor)*[-R0/ti_spl(rhotor)]*drho_tor_dr
+        omtb_tor= dtbdrho_spl(rhotor)*[-R0/tb_spl(rhotor)]*drho_tor_dr
+
+        # Carboon density profile on grid from the quasineutrality condition
+        nc_tor=(ne_tor - ni_tor)/6
+        omnc_tor =(ne_tor*omne_tor -ni_tor*omni_tor)/(6*nc_tor)
+
+        #Gyroradius-to-machine-size ratio at reference location
+        rho_star = (m_ref*np.sqrt(tref_tr/m_ref))/(Bref*R0)
+        rho_star_tr = (m_ref*np.sqrt(t_ref/m_ref))/(Bref_tr*Lref_tr)
+
+        #ITER Impurity Flux Calculation and Diffusion Coefficent#
+        iterprofiles = ReadPfile(iterpfile)
+        K_boltz = 8.617 * 10 ** (-5) #Boltzmann Constant in eV/K
+
+        T_i = iterprofiles[10][1:] #in kev
+        for ti in range(len(T_i)):
+            T_i[ti] = float(T_i[ti])
+
+        n_w = iterprofiles[3][1:]
+        for ei in range(len(n_w)):
+            n_w[ei] = float(n_w[ei])
+
+        rho_iter = iterprofiles[50][1:]
+        for rhoi in range(len(rho_iter)):
+            rho_iter[rhoi] = float(rho_iter[rhoi])
+
+        charge = []
+        for T in range(len(T_i)):
+            state = ionize.ionization(T_i[T])
+            charge.append(state)
+
+        D_W = [] #Tungsten Impurity Diffusion Coefficent
+        for tcharge in range(len(T_i)):
+            T_i[tcharge] = T_i[tcharge] * 1000
+            rati = (T_i[tcharge]/charge[tcharge])
+            Diff = (1/16)*(K_boltz/abs(iter_Bref))*(rati)
+            D_W.append(Diff)
+
+        nwspl_iter = InterpolatedUnivariateSpline(rho_iter, n_w, k=interpol_order)
+        dnwdrho_spl = nwspl_iter.derivative()
+        omnw_iter= dnwdrho_spl(rho_iter)*[-iter_Lref/nwspl_iter(rho_iter)]*drho_tor_dr_iter
+
+        R_L_n = np.linspace(1.7,4.7536,110)
+        flux_W = -(D_W*omnw_iter[0])
+
+        plt.figure()
+        plt.plot(omnw_iter[0],D_W, linewidth=3.0)
+        plt.xlabel("R/$L_{n}$", fontsize=16)
+        plt.ylabel('$D_{W}$(m^2/s)', fontsize=16)
+        plt.tight_layout
+        plt.grid()
+        plt.show()
+
+        plt.figure()
+        plt.plot(omnw_iter[0],flux_W,linewidth=3.0)
+        plt.xlabel("R/$L_{n}$", fontsize=16)
+        plt.ylabel('$\\Gamma_{W}$', fontsize=16)
+        plt.tight_layout
         plt.grid()
         plt.show()
 
