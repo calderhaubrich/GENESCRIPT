@@ -7,9 +7,12 @@ import rho_tor_to_miller_r as miller
 import W_ionization_function as ionize
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy as sp
+import scipy.interpolate
 import sys
 import argparse
 from scipy.interpolate import InterpolatedUnivariateSpline, make_interp_spline, BSpline
+from scipy.signal import savgol_filter
 
 plt.rcParams.update({'font.size':14})
 
@@ -88,12 +91,13 @@ def main(args):
 
     # Normalized paramters at target toroidal radial location
     Z0= 0.0031727/R0
-    mD= 3.343583719e-27         # Mass of deuterium in kg
-    m_ref= mD                   # Deuteriam mass as reference mass
-    mD_tr= mD/m_ref             # Normalized deuterium mass
-    me= 9.10938356e-31          # Mass of electron in SI Units (kg)
-    me_tr= me/m_ref             # Normalized electron mass
-    #n_ref= ne_spl(rhotor)      # reference temparture as function of rhotor
+    K_boltz = 8.617 * 10 ** (-5) #Boltzmann Constant in eV/K
+    mD= 3.343583719e-27          # Mass of deuterium in kg
+    m_ref= mD                    # Deuteriam mass as reference mass
+    mD_tr= mD/m_ref              # Normalized deuterium mass
+    me= 9.10938356e-31           # Mass of electron in SI Units (kg)
+    me_tr= me/m_ref              # Normalized electron mass
+    n_ref= ne_spl(rhotor)       
     t_ref= ti_spl(rhotor) 
     nref_tr= ne_spl(rho_tr)     # Electron density as refernce density at target location
     tref_tr= ti_spl(rho_tr)     # main ion tempeartrure as reference temperature at target location
@@ -102,12 +106,9 @@ def main(args):
     omeg_tr= omeg_spl(rho_tr)   # toroidal rotation frequency in rad/sec at reference location
     ne_tr= ne_spl(rho_tr)/nref_tr
     ni_tr= ni_spl(rho_tr)/nref_tr
-    nb_tr= nb_spl(rho_tr)/nref_tr
 
     te_tr= te_spl(rho_tr)/tref_tr
     ti_tr= ti_spl(rho_tr)/tref_tr
-    tb_tr= tb_spl(rho_tr)/tref_tr
-
 
     #Calculate Gradients with respect to major radius R0
     omne_tr= dnedrho_spl(rho_tr)*[-R0/ne_spl(rho_tr)]*drho_tor_dr #omne_tr = -(Lref/n)(dn/drho)
@@ -116,12 +117,6 @@ def main(args):
     omte_tr= dtedrho_spl(rho_tr)*[-R0/te_spl(rho_tr)]*drho_tor_dr
     omti_tr= dtidrho_spl(rho_tr)*[-R0/ti_spl(rho_tr)]*drho_tor_dr
     omtb_tr= dtbdrho_spl(rho_tr)*[-R0/tb_spl(rho_tr)]*drho_tor_dr
-
-    # To calculate ion density when no Carbon impurity present
-    #nc_tr= 0
-    #omnc_tr=0
-    #ni_tr=(ne_tr-6*nc_tr);
-    #omni_tr= (ne_tr*omne_tr- 6*nc_tr*omnc_tr)/ni_tr;
 
     # Carboon density profile from the quasineutrality condition
     nc_tr=(ne_tr - ni_tr)/6
@@ -140,10 +135,13 @@ def main(args):
         Returns gradient values with respect to major radius R0.
 
         Input: -a or --all
-        Returns plots of species with respect to rhotor
+        Returns plots of species with respect to rhotor.
 
         Input: -m or --miller
-        Returns miller_r to rhotor relationship
+        Returns miller_r to rhotor relationship.
+
+        Input: -s or --rhostar
+        Returns ITER gradients as well as gyroradius-to-machine-size ratio at reference location.
         """)
 
     #Gradient Calculator with respect to rhotor#
@@ -233,51 +231,90 @@ def main(args):
         iter_case = millergeometryfunction.finder(iter_eqdsk, rho_tr)
         iter_Bref = iter_case[8]
         iter_Lref = iter_case[0]
+        iter_Lrefa = iter_case[1]
         drho_tor_dr_iter = iter_case[2]
         radial = iter_case[7]
 
+        iter_quasi = miller.findmiller(iter_eqdsk)
+        iter_r_a = iter_quasi[0]
+        iter_rho_res = iter_quasi[1]
+
         #ITER Gradient Calculation
         iterprofiles = ReadPfile(iterpfile)
-        K_boltz = 8.617 * 10 ** (-5) #Boltzmann Constant in eV/K
 
         T_i      = iterprofiles[10] #in kev
+        n_He     = iterprofiles[11]
+        n_Z      = iterprofiles[7]
+        n_H      = iterprofiles[12]
+        n_He3    = iterprofiles[16]
         n_W      = iterprofiles[15]
         rho_iter = iterprofiles[50]
         n_e      = iterprofiles[3]
         T_e      = iterprofiles[2]
         n_D      = iterprofiles[4]
+        zEff     = iterprofiles[29]
         Vr       = iterprofiles[-1]
 
-        T_i_spl = InterpolatedUnivariateSpline(rho_iter, T_i, k=interpol_order)
-        n_e_spl = InterpolatedUnivariateSpline(rho_iter, n_e, k=interpol_order)
-        T_e_spl = InterpolatedUnivariateSpline(rho_iter, T_e, k=interpol_order)
-        n_D_spl = InterpolatedUnivariateSpline(rho_iter, n_D, k=interpol_order)
+        newlength = 256
+        rho_iter_new = np.linspace(min(rho_iter),max(rho_iter), newlength)
+        yD = savgol_filter(n_D,9,3)
+        n_D_new = scipy.interpolate.interp1d(rho_iter,yD,kind='cubic')(rho_iter_new)
+        ye = savgol_filter(n_e,9,3)
+        n_e_new = scipy.interpolate.interp1d(rho_iter,ye,kind='cubic')(rho_iter_new)
+        yW = savgol_filter(n_W,9,3)
+        n_W_new = scipy.interpolate.interp1d(rho_iter,yW,kind='cubic')(rho_iter_new)
+        yti = savgol_filter(T_i,9,3)
+        T_i_new = scipy.interpolate.interp1d(rho_iter,yti,kind='cubic')(rho_iter_new)
+        yte = savgol_filter(T_e,9,3)
+        T_e_new = scipy.interpolate.interp1d(rho_iter,yte,kind='cubic')(rho_iter_new)
+
+
+        T_i_spl   = InterpolatedUnivariateSpline(rho_iter_new, T_i_new, k=interpol_order)
+        n_He_spl  = InterpolatedUnivariateSpline(rho_iter, n_He, k=interpol_order)
+        n_Z_spl   = InterpolatedUnivariateSpline(rho_iter, n_Z, k=interpol_order)
+        n_H_spl   = InterpolatedUnivariateSpline(rho_iter, n_H, k=interpol_order)
+        n_He3_spl = InterpolatedUnivariateSpline(rho_iter,n_He3, k=interpol_order)
+        n_W_spl   = InterpolatedUnivariateSpline(rho_iter_new, n_W_new, k=interpol_order)
+        n_e_spl   = InterpolatedUnivariateSpline(rho_iter_new, n_e_new, k=interpol_order)
+        T_e_spl   = InterpolatedUnivariateSpline(rho_iter_new, T_e_new, k=interpol_order)
+        n_D_spl   = InterpolatedUnivariateSpline(rho_iter_new, n_D_new, k=interpol_order)
         Vrad_sec_spl = InterpolatedUnivariateSpline(rho_iter, Vr, k=interpol_order)
+        zEff_spl  = InterpolatedUnivariateSpline(rho_iter, zEff, k=interpol_order)
 
         dT_idrho_spl = T_i_spl.derivative()
         dn_edrho_spl = n_e_spl.derivative()
         dT_edrho_spl = T_e_spl.derivative()
         dn_Ddrho_spl = n_D_spl.derivative()
+        dn_Wdrho_spl = n_W_spl.derivative()
 
-        t_ref = T_i_spl(rho_iter)
         Vr_loc = Vrad_sec_spl(rho_tr)
         nref_tr = n_e_spl(rho_tr)     # Electron density as refernce density at target location
         tref_tr = T_i_spl(rho_tr)
+        nH_tr   = n_H_spl(rho_tr)/nref_tr
+        nZ_tr   = n_Z_spl(rho_tr)/nref_tr
+        nHe_tr  = n_He_spl(rho_tr)/nref_tr
+        nHe3_tr = n_He3_spl(rho_tr)/nref_tr
         ne_iter= n_e_spl(rho_tr)/nref_tr
         ni_iter= n_D_spl(rho_tr)/nref_tr
-        #vtor_tr= vtor_spl(rho_tr)   # toroidal rotation velocity m/s at reference location
-        #omeg_tr= omeg_spl(rho_tr)   # toroidal rotation frequency in rad/sec at reference location
+        nw_tr  = n_W_spl(rho_tr)/nref_tr
+        zEff_tr = zEff_spl(rho_tr)
         Vrad_sec = Vr_loc*1000/(iter_Lref+(radial*iter_Lref))
-        nw_tr = (ne_iter - ni_iter)/37                                  # Tungsten Density with normalized mass
+        
+        # Tungsten Density from quasineutrality.
+        #nw_tr=(ne_iter - ni_iter)/62
+        qw_tr=np.sqrt(zEff_tr*(ne_iter/nZ_tr))-1
 
         T_e_tr= T_e_spl(rho_tr)/tref_tr
         T_i_tr= T_i_spl(rho_tr)/tref_tr
-
-        omn_e_tr= dn_edrho_spl(rho_tr)*[-iter_Lref/n_e_spl(rho_tr)]*drho_tor_dr_iter #omne_tr = -(Lref/n)(dn/drho)
+        ne_iter = (nw_tr*62)+ni_iter
+        #omn_e_tr= dn_edrho_spl(rho_tr)*[-iter_Lref/n_e_spl(rho_tr)]*drho_tor_dr_iter #omne_tr = -(Lref/n)(dn/drho)
         omT_e_tr= dT_edrho_spl(rho_tr)*[-iter_Lref/T_e_spl(rho_tr)]*drho_tor_dr_iter
         omT_i_tr= dT_idrho_spl(rho_tr)*[-iter_Lref/T_i_spl(rho_tr)]*drho_tor_dr_iter
         omn_D_tr= dn_Ddrho_spl(rho_tr)*[-iter_Lref/n_D_spl(rho_tr)]*drho_tor_dr_iter
-        omn_W_tr =(ne_iter*omn_e_tr -ni_iter*omn_D_tr)/(37*nw_tr)
+        omn_W_tr= dn_Wdrho_spl(rho_tr)*[-iter_Lref/n_W_spl(rho_tr)]*drho_tor_dr_iter
+        omn_e_tr = ((omn_W_tr*62*nw_tr)+omn_D_tr*ni_iter)/ne_iter
+
+        #omn_W_tr =(ne_iter*omn_e_tr -ni_iter*omn_D_tr)/(62*nw_tr)
 
         print('Location   = {}'.format(rho_tr))
 
@@ -287,6 +324,7 @@ def main(args):
         print('omte_tr    = {}'.format(omT_e_tr[0]))
         print('omti_tr    = {}'.format(omT_i_tr[0]))
         print('nW_tr      = {}'.format(nw_tr))
+        print('qW_tr      = {}'.format(qw_tr))
         print('ni_tr      = {}'.format(ni_iter))
         print('ne_tr      = {}'.format(ne_iter))
         print('te_tr      = {}'.format(T_e_tr))
@@ -299,63 +337,22 @@ def main(args):
         #rho_star = (m_ref*np.sqrt(tref_tr/m_ref))/(Bref*R0)
         #rho_star_tr = (m_ref*np.sqrt(t_ref/m_ref))/(Bref_tr*Lref_tr)
 
-        #ITER Impurity Flux Calculation and Diffusion Coefficent#
+        plt.figure()
+        plt.plot(rho_iter_new,n_D_new/nref_tr, linewidth=2,label='Convolution = 256')
+        plt.plot(rho_iter,n_D/nref_tr, linewidth=2,label='Original=110')
+        plt.xlabel("$\\rho_{tor}$", fontsize=16)
+        plt.ylabel("$n_{norm}$", fontsize=16)
+        plt.tight_layout()
+        plt.legend()
+        plt.grid()
+        plt.show()
 
+        #ITER Impurity Flux Calculation and Diffusion Coefficent#
+        
         charge = []
         for T in range(len(T_i)):
             state = ionize.ionization(T_i[T])
             charge.append(state)
-        #print(max(set(charge), key=charge.count))
-        #print(sum(charge)/len(charge))
-        #print(T_i)
-        D_W = [] #Tungsten Impurity Bohm Diffusion Coefficent
-        for tcharge in range(len(T_i)):
-            T_i[tcharge] = T_i[tcharge] * 1000
-            rati = (T_i[tcharge]/charge[tcharge])
-            Diff = (1/16)*(K_boltz/abs(iter_Bref))*(rati)
-            D_W.append(Diff)
-
-        plt.figure()
-        plt.plot(rho_iter,D_W, linewidth=3.0)
-        plt.xlabel("R/$L_{n}$", fontsize=16)
-        plt.ylabel('$D_{W}$(m^2/s)', fontsize=16)
-        plt.tight_layout
-        plt.grid()
-        plt.show()
-
-        plt.figure()
-        plt.plot(rho_iter,T_i, linewidth=3.0)
-        plt.xlabel("$\\rho_{tor}$", fontsize=16)
-        plt.ylabel("T$_i$(eV)", fontsize=16)
-        plt.tight_layout()
-        plt.grid()
-        plt.show()
-
-        fig,ax1 = plt.subplots()
-        ax2=ax1.twinx()
-        ax1.plot(rho_iter,T_i, 'g-')
-        ax2.plot(rho_iter, charge, 'b-')
-        ax1.set_xlabel("$\\rho_{tor}$")
-        ax1.set_ylabel("T$_i$(eV)",color='g')
-        ax2.set_ylabel("Z$_W$",color='b')
-        plt.show()
-
-        plt.figure()
-        plt.plot(T_i,charge, linewidth=3.0)
-        plt.xscale('log')
-        plt.xlabel("T$_i$(eV)", fontsize=16)
-        plt.ylabel("Z$_W$", fontsize=16)
-        plt.tight_layout()
-        plt.grid()
-        plt.show()
-
-        plt.figure()
-        plt.plot(rho_iter, n_W, linewidth=3.0)
-        plt.xlabel("$\\rho_{tor}$", fontsize=16)
-        plt.ylabel("n$_W (m^{-3})$", fontsize=16)
-        plt.tight_layout()
-        plt.grid()
-        plt.show()
 
     #Species Plots with Respect to rhotor#
     if (args.all):
