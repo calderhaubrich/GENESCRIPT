@@ -1,4 +1,5 @@
 #Tungsten Ionization Function
+#ionization data from NIST
 def ionization(temperature):
     Z_W = 1
     temperature = temperature * 1000
