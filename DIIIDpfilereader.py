@@ -14,10 +14,10 @@ e = 'Electric Field (kV/m)'
 k = '(km/s/T)'
 v = 'Velocity (km/s)'
 
+colors = ['darkblue','mediumblue','blue','dodgerblue', 'mediumturquoise','aquamarine','mediumspringgreen','palegreen','chartreuse','greenyellow','yellow']
 
+#Individual pfile reader for input file#
 def ReadPfile(filepath):
-    #TODO: Add check on the filepath.
-    #File Converter#
     pfile = filepath.readlines()
     pfilecon = []
     chunked_list = list()
@@ -35,7 +35,6 @@ def ReadPfile(filepath):
     return chunked_list
 
 #Plot Profiles Function#
-#TODO: Clean up variable names.
 def pfileplot(heads,types,plotlabel):
     titles = heads[0]
     del heads[0]
@@ -44,13 +43,15 @@ def pfileplot(heads,types,plotlabel):
     for pos in range(len(heads)):
         x.append(float(heads[pos][0]))
         y.append(float(heads[pos][1]))
-    plt.xlabel(titles[1])
-    plt.ylabel(types)
-    plt.plot(x,y,label=plotlabel)
-    plt.legend()
+    plt.xlabel("$\\rho_{tor}$", fontsize=16)
+    plt.ylabel(types, fontsize=16)
+    for e in range(len(x)):
+        y[e] = y[e] * (10**20)
+    plt.plot(x,y,label=plotlabel,linewidth=3.0)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.legend()
     plt.grid()
-
-#Define pfile_comparison.
 
 def main(args):
     parser = argparse.ArgumentParser(description='Reads pfile input and plots species.')
@@ -98,6 +99,7 @@ def main(args):
 
     chunked_list = ReadPfile(args.file)
 
+    #Plots all species with respect to psinorm#
     if (args.all):
         pfileplot(chunked_list[0],n,'ne')
         plt.show()
@@ -174,9 +176,17 @@ def main(args):
         plt.legend()
         plt.show()
 
+        pfileplot(chunked_list[0],n,'ne')
+        pfileplot(chunked_list[2],n,'ni')
+        pfileplot(chunked_list[18],n,'nz1')
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+    #Looks for all pfiles in file and plots time comparison by species#
     if (args.comparison):
-        unfiles = glob.glob('p163241.*')
-        files = sorted(unfiles,key=len)
+        unfiles = glob.glob('/home/calderhaubrich/Desktop/p_g_files/DIII-D/163241.03500/p163241.*')
+        files = sorted(unfiles)
         readpfiles = []
         pfilenames = list()
 
@@ -199,7 +209,7 @@ def main(args):
                     chunked_list.append(pfilecon[j:j+4])
             readpfiles.append(chunked_list)
 
-        def pfileplotcomp(l,types,name):
+        def pfileplotcomp(l,types,name,col):
             plotlabel = pfilenames[name]
             del l[0]
             x=[]
@@ -207,125 +217,138 @@ def main(args):
             for nh in range(len(l)):
                 x.append(float(l[nh][0]))
                 y.append(float(l[nh][1]))
-            plt.xlabel('psinorm')
-            plt.ylabel(types)
-            plt.plot(x,y,label=plotlabel)
-            plt.legend()
-
-        del NZA[0][0]
-        del NZA [0][3]
-        del NZA [0][3]
-        del NZA [0][3]
-
-        print(tabulate(NZA))
+            plt.xlabel('psinorm',fontsize=16)
+            plt.ylabel(types,fontsize=16)
+            plt.plot(x,y,color=col,label=plotlabel)
+            #plt.legend()
 
         for edens in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[edens][0],'ne (10^20/m^3)',edens)
+            c = colors[edens]
+            pfileplotcomp(readpfiles[edens][0],'n$_e$ (10$^{20}$/m$^{3}$)',edens,c)
         plt.grid()
         plt.show()
 
         for etemp in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[etemp][1],'te (keV)',etemp)
+            c = colors[etemp]
+            pfileplotcomp(readpfiles[etemp][1],'T$_e$ (keV)',etemp,c)
         plt.grid()
         plt.show()
 
         for idens in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[idens][2],'ni (10^20/m^3)',idens)
+            c = colors[idens]
+            pfileplotcomp(readpfiles[idens][2],'n$_i$ (10$^{20}$/m$^{3}$)',idens,c)
         plt.grid()
         plt.show()
 
         for itemp in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[itemp][3],'ti (keV)',itemp)
+            c = colors[itemp]
+            pfileplotcomp(readpfiles[itemp][3],'T$_i$ (keV)',itemp,c)
         plt.grid()
         plt.show()
 
         for bdens in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[bdens][4],'nb (10^20/m^3)',bdens)
+            c = colors[bdens]
+            pfileplotcomp(readpfiles[bdens][4],'nb (10^20/m^3)',bdens,c)
         plt.grid()
         plt.show()
 
         for bpres in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[bpres][5],'pb (kPa)',bpres)
+            c = colors[bpres]
+            pfileplotcomp(readpfiles[bpres][5],'pb (kPa)',bpres,c)
         plt.grid()
         plt.show()
 
         for ptot in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[ptot][6],'ptot (kPa)',ptot)
+            c = colors[ptot]
+            pfileplotcomp(readpfiles[ptot][6],'ptot (kPa)',ptot,c)
         plt.grid()
         plt.show()
 
         for omeg in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omeg][7],'omeg (kRad/s)',omeg)
+            c = colors[omeg]
+            pfileplotcomp(readpfiles[omeg][7],'omeg (kRad/s)',omeg,c)
         plt.grid()
         plt.show()
 
         for omegp in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omegp][8],'omegp (kRad/s)',omegp)
+            c = colors[omegp]
+            pfileplotcomp(readpfiles[omegp][8],'omegp (kRad/s)',omegp,c)
         plt.grid()
         plt.show()
 
         for omgvb in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omgvb][9],'omgvb (kRad/s)',omgvb)
+            c = colors[omgvb]
+            pfileplotcomp(readpfiles[omgvb][9],'omgvb (kRad/s)',omgvb,c)
         plt.grid()
         plt.show()
 
         for omgpp in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omgpp][10],'omgpp (kRad/s)',omgpp)
+            c = colors[omgpp]
+            pfileplotcomp(readpfiles[omgpp][10],'omgpp (kRad/s)',omgpp,c)
         plt.grid()
         plt.show()
 
         for omgeb in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omgeb][11],'omgeb (kRad/s)',omgeb)
+            c = colors[omgeb]
+            pfileplotcomp(readpfiles[omgeb][11],'omgeb (kRad/s)',omgeb,c)
         plt.grid()
         plt.show()
 
         for ommvb in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[ommvb][12],'omgeb (kRad/s)',omgeb)
+            c = colors[ommvb]
+            pfileplotcomp(readpfiles[ommvb][12],'omgeb (kRad/s)',omgeb,c)
         plt.grid()
         plt.show()
 
         for ommpp in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[ommpp][13],'ommpp (kRad/s)',ommpp)
+            c = colors[ommpp]
+            pfileplotcomp(readpfiles[ommpp][13],'ommpp (kRad/s)',ommpp,c)
         plt.grid()
         plt.show()
 
         for omevb in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omevb][14],'omevb (kRad/s)',omevb)
+            c = colors[omevb]
+            pfileplotcomp(readpfiles[omevb][14],'omevb (kRad/s)',omevb,c)
         plt.grid()
         plt.show()
 
         for omepp in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[omepp][15],'omepp (kRad/s)',omepp)
+            c = colors[omepp]
+            pfileplotcomp(readpfiles[omepp][15],'omepp (kRad/s)',omepp,c)
         plt.grid()
         plt.show()
 
         for er in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[er][16],'er (kV/m)',er)
+            c = colors[er]
+            pfileplotcomp(readpfiles[er][16],'er (kV/m)',er,c)
         plt.grid()
         plt.show()
 
         for kpol in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[kpol][17],'kpol (km/s/T)',kpol)
+            c = colors[kpol]
+            pfileplotcomp(readpfiles[kpol][17],'kpol (km/s/T)',kpol,c)
         plt.grid()
         plt.show()
 
         for carb in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[carb][18],'nz1 (10^20/m^3)',carb)
+            c = colors[carb]
+            pfileplotcomp(readpfiles[carb][18],'n$_C$ (10$^{20}$/m$^{3}$)',carb,c)
         plt.grid()
         plt.show()
 
         for vtor in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[vtor][19],'vtor1 (km/s)',vtor)
+            c = colors[vtor]
+            pfileplotcomp(readpfiles[vtor][19],'vtor1 (km/s)',vtor,c)
         plt.grid()
         plt.show()
 
         for vpol in range(len(readpfiles)):
-            pfileplotcomp(readpfiles[vpol][20],'vpol1 (km/s)',vpol)
+            c = colors[vpol]
+            pfileplotcomp(readpfiles[vpol][20],'vpol1 (km/s)',vpol,c)
         plt.grid()
         plt.show()
 
-    #TODO: Store these strings in some global arrays at the top, matching the indices passed in and the data indices.
-
+    #Input number for individual species plots with respect to psinorm#
     if (args.list):
         lists = args.list
         for element in lists:
@@ -404,6 +427,7 @@ def main(args):
             if float(element) == 18:
                 listlabel = n
                 pfileplot(chunked_list[int(element)],listlabel,'nzl')
+                plt.tight_layout()
                 plt.show()
             if float(element) == 19:
                 listlabel = v
