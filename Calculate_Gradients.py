@@ -16,11 +16,9 @@ from scipy.signal import savgol_filter
 
 plt.rcParams.update({'font.size':14})
 
-proffpath = '/home/calderhaubrich/GENE/DIIID_163241_profiles/p163241.03500_e5059'
-
 def main(args):
     parser = argparse.ArgumentParser(description='Calculates gradients at given rhotor position.')
-    parser.add_argument('file', help='input some gfile')
+    parser.add_argument('gfile', help='input some DIII-D gfile')
     parser.add_argument('location', help='rhotor location')
     parser.add_argument('-r','--rho', default=False, action='store_true', help='Finds rho gradients')
     parser.add_argument('-s','--rho_star',default=False, action='store_true', help='Applies scaling factor to profiles')
@@ -29,7 +27,8 @@ def main(args):
     parser.add_argument('-i','--info', default=False, action='store_true', help='Provides info on code')
     args = parser.parse_args(args)
 
-    efitfpath = args.file
+    efitfpath = args.gfile
+    proffpath = '/home/calderhaubrich/Desktop/p_g_files/DIII-D/163241.03500/p163241.03500_e5059' #Manually input DIII-D pfile path
     rho_tr = float(args.location)
 
     setparam = {'nrhomesh':'rhotor'}
@@ -38,21 +37,20 @@ def main(args):
     specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
 
 
-    rhotor= np.array(specprof['rhotor'])
-
-    Te= np.array(specprof['Te'])
-    Ti= np.array(specprof['Ti'])
-    ne= np.array(specprof['ne'])
-    ni= np.array(specprof['ni'])
-    nb= np.array(specprof['nb'])
-    nc= np.array(specprof['nz'])
-    Pb= np.array(specprof['Pb'])
-    Vtor= np.array(specprof['Vtor'])
-    Vpol= np.array(specprof['Vpol'])
-    Ptot= np.array(specprof['pressure'])
-    omeg = np.array(specprof['omeg'])
-    q= np.array(efitprof['q'])
-    Tb= (Pb/nb)*(1/(1.6*10e-19))
+    rhotor = np.array(specprof['rhotor'])
+    Te     = np.array(specprof['Te'])
+    Ti     = np.array(specprof['Ti'])
+    ne     = np.array(specprof['ne'])
+    ni     = np.array(specprof['ni'])
+    nb     = np.array(specprof['nb'])
+    nc     = np.array(specprof['nz'])
+    Pb     = np.array(specprof['Pb'])
+    Vtor   = np.array(specprof['Vtor'])
+    Vpol   = np.array(specprof['Vpol'])
+    Ptot   = np.array(specprof['pressure'])
+    omeg   = np.array(specprof['omeg'])
+    q      = np.array(efitprof['q'])
+    Tb     = (Pb/nb)*(1/(1.6*10e-19))
 
     geomdata = millergeometryfunction.finder(efitfpath,rho_tr)
     R0 = geomdata[0]
@@ -129,7 +127,7 @@ def main(args):
     if (args.info):
         print("""
         This code is used to calculate gradients with respect to major radius, plot species with respect to rhotor,
-        and plots miller_r relationship.
+        and plots miller_r relationship. Input gfile and rhotor location.
 
         Input: -r or --rho
         Returns gradient values with respect to major radius R0.
@@ -177,10 +175,7 @@ def main(args):
     if (args.miller):
         mill = miller.findmiller(efitfpath)
         rad = mill[0]
-        setparam = {'nrhomesh':'rhotor'}
 
-        efitprof = cheasefiles.read_eqdsk(eqdskfpath=efitfpath,setParam=setparam)
-        specprof = cheasefiles.read_profiles(profilesfpath=proffpath,setParam=setparam,eqdsk=efitfpath)
         rhopsi = np.array(specprof['rhopsi'])
         rhotor = np.array(specprof['rhotor'])
 
@@ -193,8 +188,8 @@ def main(args):
 
     #rho_star Calculation and Scaling of Profiles
     if (args.rho_star):
-        iter_eqdsk = '/home/calderhaubrich/Workspace/GENESCRIPT/Cheasefiles/eqdsk.DT_15MA_Q10'
-        iterpfile = '/home/calderhaubrich/Workspace/GENESCRIPT/Cheasefiles/ITER_DT_15MA_Q10_peaked_n.txt'
+        iter_eqdsk = '/home/calderhaubrich/Desktop/p_g_files/ITER/eqdsk.DT_15MA_Q10'
+        iterpfile = '/home/calderhaubrich/Desktop/p_g_files/ITER/ITER_DT_15MA_Q10_peaked_n.txt'
 
         def ReadPfile(filepath):
             f     = open(filepath,'r')
@@ -356,11 +351,26 @@ def main(args):
 
     #Species Plots with Respect to rhotor#
     if (args.all):
+
+        tni = scipy.interpolate.splrep(rhotor,ni, s=0)
+        tne = scipy.interpolate.splrep(rhotor,ne, s=0)
+        tnc = scipy.interpolate.splrep(rhotor,nc, s=0)
+        tti = scipy.interpolate.splrep(rhotor,Ti, s=0)
+        tte = scipy.interpolate.splrep(rhotor,Te, s=0)
+        nrho = np.linspace(min(rhotor),max(rhotor), 256)
+        ni_big = scipy.interpolate.splev(nrho,tni,der=0)
+        ne_big = scipy.interpolate.splev(nrho,tne,der=0)
+        nc_big = scipy.interpolate.splev(nrho,tnc,der=0)
+        ti_big = scipy.interpolate.splev(nrho,tti,der=0)
+        te_big = scipy.interpolate.splev(nrho,tte,der=0)
+
         # Ion temperature plot
         plt.figure()
-        plt.plot(rhotor,Ti, linewidth=3.0)
+        plt.plot(nrho,ti_big, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("T$_i$(eV)", fontsize=16)
+        plt.ylim(ymin=0)
+        plt.ylim(ymax=3100)
         plt.tight_layout()
         plt.grid()
         plt.show()
@@ -378,9 +388,11 @@ def main(args):
 
         # Electron temperature plot
         plt.figure()
-        plt.plot(rhotor,Te, linewidth=3.0)
+        plt.plot(nrho,te_big, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("T$_e$(eV)", fontsize=16)
+        plt.ylim(ymin=0)
+        plt.ylim(ymax=3100)
         plt.tight_layout()
         plt.grid()
         plt.show()
@@ -449,7 +461,7 @@ def main(args):
 
         # Carbon density plot
         plt.figure()
-        plt.plot(rhotor,nc, linewidth=3.0)
+        plt.plot(nrho,nc_big, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("n$_C (m^{-3})$",  fontsize=16)
         plt.tight_layout()
@@ -485,8 +497,8 @@ def main(args):
 
         # electron and ion density plot
         plt.figure()
-        plt.plot(rhotor,ne, linewidth=3.0)
-        plt.plot(rhotor,ni, linewidth=3.0)
+        plt.plot(nrho,ne_big, linewidth=3.0)
+        plt.plot(nrho,ni_big, linewidth=3.0)
         plt.xlabel("$\\rho_{tor}$", fontsize=16)
         plt.ylabel("n $(m^{-3})$", fontsize=16)
         plt.legend(["e", "i"], prop={"size":16})
