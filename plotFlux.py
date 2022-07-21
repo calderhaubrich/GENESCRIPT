@@ -132,34 +132,6 @@ def main(args):
     fv   = parser.add_argument("-v", "--fieldVal", help="0=phi, 1=A_parallel, 2=B_parallel.", type=int, default=0)
     args = parser.parse_args(args)
 
-    #readFlux(nrgfile)
-    def plotter(inputs,label):
-        plt.figure()
-        plt.plot(t, inputs)
-        plt.xlabel('$t\\;/\\;(R/c_s)$', fontsize=25)
-        plt.ylabel(fluxLabels[label], fontsize=25)
-        plt.xticks(fontsize=18)
-        plt.yticks(fontsize=18)
-        plt.yscale('log')
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-
-    def allplotter(ion,electron,tungsten,label):
-        plt.figure()
-        plt.plot(t,ion,label='i')
-        plt.plot(t,electron,label='e')
-        plt.plot(t,tungsten,label='W')
-        plt.xlabel('$t\\;/\\;(R/c_s)$', fontsize=25)
-        plt.ylabel(fluxLabels[label],fontsize=25)
-        plt.yscale('log')
-        plt.xticks(fontsize=18)
-        plt.yticks(fontsize=18)
-        plt.legend()
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-
     #Quasi-Linear Study
     if (args.quasi):
         path = args.directories
@@ -211,19 +183,28 @@ def main(args):
         qiflux = []
         qeflux = []
         qwflux = []
+        ratio  = []
         for ql in range(len(ampshape)):
             quasi_i_heat = (ampshape[ql]/denom[ql]) * i_heat[ql]
-            qiheat.append(abs(quasi_i_heat))
+            qiheat.append(quasi_i_heat)
             quasi_e_heat = (ampshape[ql]/denom[ql]) * e_heat[ql]
-            qeheat.append(abs(quasi_e_heat))
+            qeheat.append(quasi_e_heat)
             quasi_w_heat = (ampshape[ql]/denom[ql]) * w_heat[ql]
-            qwheat.append(abs(quasi_w_heat))
+            qwheat.append(quasi_w_heat)
             quasi_i_flux = (ampshape[ql]/denom[ql]) * i_flux[ql]
-            qiflux.append(abs(quasi_i_flux))
+            qiflux.append(quasi_i_flux)
             quasi_e_flux = (ampshape[ql]/denom[ql]) * e_flux[ql]
-            qeflux.append(abs(quasi_e_flux))
+            qeflux.append(quasi_e_flux)
             quasi_w_flux = (ampshape[ql]/denom[ql]) * w_flux[ql]
-            qwflux.append(abs(quasi_w_flux))
+            qwflux.append(quasi_w_flux)
+            ratio.append(quasi_i_flux/quasi_i_heat)
+        
+        print('Q.L. ion heat  = {}'.format(np.sum(qiheat)))
+        print('Q.L. ele. heat = {}'.format(np.sum(qeheat)))
+        print('Q.L. W heat    = {}'.format(np.sum(qwheat)))
+        print('Q.L. ion flux  = {}'.format(np.sum(qiflux)))
+        print('Q.L. ele. flux = {}'.format(np.sum(qeflux)))
+        print('Q.L. W flux    = {}'.format(np.sum(qwflux)))
 
         plt.figure()
         plt.plot(kyRhoi, qiheat, label = 'Q$_i$')
@@ -245,6 +226,14 @@ def main(args):
         plt.ylabel('$\\Gamma_{QL}$', fontsize=18)
         #plt.yscale('log')
         plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.show()
+
+        plt.figure()
+        plt.plot(kyRhoi, ratio, label = '$\\Gamma_{i}$ / Q$_i$')
+        plt.xlabel('$k_y\\rho_i$', fontsize=16)
+        plt.ylabel('$\\Gamma_{i}$ / Q$_i$', fontsize=18)
         plt.grid()
         plt.tight_layout()
         plt.show()
