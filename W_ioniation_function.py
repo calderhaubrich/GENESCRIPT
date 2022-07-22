@@ -1,6 +1,6 @@
 #Tungsten Ionization Function
 #ionization data from NIST
-def ionization(temperature):
+def ionization(temperature): #TODO: This is totally unnecessary but its probably possible to grab data from the NIST website tables somehow and take an element as input.
     Z_W = 1
     temperature = temperature * 1000
     if temperature < 16.37:

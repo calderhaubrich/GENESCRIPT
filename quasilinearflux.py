@@ -18,7 +18,7 @@ import readPhi
 import plotSatAmps
 
 #Column Labels
-n      = '$\\langle|n_{1}|^{2}\\rangle$'
+n      = '$\\langle|n_{1}|^{2}\\rangle$' #TODO: Use an array.
 u      = '$\\langle|u_{1}|^{2}\\rangle$'
 T_para = '$\\langle|T_{\\parallel}|^{2}\\rangle$'
 T_perp = '$\\langle|T_{\\perp}|^{2}\\rangle$'
@@ -36,8 +36,8 @@ i_data = [] #ion information
 e_data = [] #electron information
 w_data = [] #tungsten information
 
-#ion data groups
-ion_n      = []
+#ion data groups #Use arrays of arrays, like [species][value]
+ion_n      = [] 
 ion_u      = []
 ion_T_para = []
 ion_T_perp = []
@@ -78,7 +78,7 @@ def find(name, path):
         if name in fies:
             return os.path.join(root,name)
 
-def readFlux(fileName):
+def readFlux(fileName): #TODO: This should be in a separate script for reading/plotting nrg file data. I have a file but cant recall if it reads the nrg or gui output.
     f = open(fileName, 'r')
     f = f.readlines()
     nrg = []
@@ -87,7 +87,7 @@ def readFlux(fileName):
         nrg.append(row)
     dividor = int(len(f)/4)
     groups = np.array_split(nrg, dividor)
-    for timestamp in range(len(groups)):
+    for timestamp in range(len(groups)):    #TODO: This stuff should agnostically loop over n species. Probably can be set up depending on the file structure.
         t.append(float(groups[timestamp][0][0]))
         i_data.append(groups[timestamp][1])
         e_data.append(groups[timestamp][2])
@@ -132,8 +132,8 @@ def main(args):
     fv   = parser.add_argument("-v", "--fieldVal", help="0=phi, 1=A_parallel, 2=B_parallel.", type=int, default=0)
     args = parser.parse_args(args)
 
-    #Quasi-Linear Study
-    if (args.quasi):
+    #Quasi-Linear Study  #TODO: We should make this the main function of this script and always have it happen. Once flux plotting is separated out.
+    if (args.quasi):     #TODO: Then we can make the input arguments more elaborate here for different quasilinear interests. Neeraj liked to plot EM/ES ratios for instance.
         path = args.directories
         for j, scanDir in enumerate(args.directories):
             #Make it so this script can be called from above a scan dir full of files.
@@ -152,7 +152,7 @@ def main(args):
         kyRhoi = modes[0]
         gamma  = modes[2]
 
-        denom  = []
+        denom  = [] #TODO: This should all get simpler with nested loops and arrays.
         e_heat = []
         i_heat = []
         w_heat = []
@@ -206,7 +206,7 @@ def main(args):
         print('Q.L. ele. flux = {}'.format(np.sum(qeflux)))
         print('Q.L. W flux    = {}'.format(np.sum(qwflux)))
 
-        plt.figure()
+        plt.figure() #TODO: What I've been doing is just having main call functions like "getData()" and "plotData()" essentially. So these scripts are easy to read.
         plt.plot(kyRhoi, qiheat, label = 'Q$_i$')
         plt.plot(kyRhoi, qeheat, label = 'Q$_e$')
         plt.plot(kyRhoi, qwheat, label = 'Q$_W$')

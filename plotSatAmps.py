@@ -14,9 +14,9 @@ from plotGrowthRates import readGrowthRates
 import readPhi
 import scriptUtils
 
-phiratio        = []
-ky              = []
-kxgrid          = []
+phiratio        = [] #TODO: Remove globals. Make other functions if you want to keep this stuff. I think a separate script for analyzing phi would be better.
+ky              = [] #TODO: Maybe the integration can be turned into a function in here which gets called in another script for looking at phi.
+kxgrid          = [] #TODO: That might be best because then we could change the function for various quaslinear models.
 geometricfactor = []
 def kperpSquaredCalc(phiData, geomData, common):
     phiSquared = phiData.real**2 + phiData.imag**2 #Complex square of phi.
@@ -32,7 +32,7 @@ def kperpSquaredCalc(phiData, geomData, common):
         denom += integ.trapz(phiSquared[kx,:])
         kxVal =  kxp[kx]
         numer += integ.trapz((geomData.gxx[:]*kxVal**2 + 2*geomData.gxy[:]*kxVal*kymin + geomData.gyy[:]*kymin**2)*phiSquared[kx,:])
-        geom  += integ.trapz(geomData.gxx[:]*kxVal**2 + 2*geomData.gxy[:]*kxVal*kymin + geomData.gyy[:]*kymin**2)
+        geom  += integ.trapz(geomData.gxx[:]*kxVal**2  + 2*geomData.gxy[:]*kxVal*kymin + geomData.gyy[:]*kymin**2)
     kxp, phiintegral = zip(*sorted(zip(kxp, phiintegral)))
     kperpSqAv = numer/denom
     geometricfactor.append(geom)
@@ -71,7 +71,7 @@ def kperpSqPlot(kperpSqAv, label):
     plt.grid()
     plt.tight_layout()
 
-def main(args):
+def main(args): #TODO: Put this back how it used to be? Depends what you do with the other stuff up top...
     parser = argparse.ArgumentParser("Script for calculating quasilinear saturation amplitudes.")
     parser.add_argument("directories",       nargs='+', default=[], help="Scan directories. Passing more than one shares the plot.")
     parser.add_argument("-n", "--datanames", nargs='+', default=[], help="Array of data names.")

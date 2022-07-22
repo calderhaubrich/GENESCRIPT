@@ -7,7 +7,7 @@ import sys
 
 import scriptUtils
 
-def readGrowthRates(fileName):
+def readGrowthRates(fileName): #TODO: If scan.log file empty read omega files.
     data = []
     f = open(fileName, 'r')
 

@@ -16,6 +16,10 @@ from scipy.signal import savgol_filter
 
 plt.rcParams.update({'font.size':14})
 
+#TODO: We should clean up all the geometry/profile scripts and maybe have a bigger script that calls them all which is useful for setting up GENE inputs.
+#TODO: I would update all the other files first since that should be simpler and then you have an idea for what to do with all these other ones going forward.
+#TODO: Feel free to discuss how to handle it all, we should probably talk it over a few times until we're happy with some idea.
+
 def main(args):
     parser = argparse.ArgumentParser(description='Calculates gradients at given rhotor position.')
     parser.add_argument('gfile', help='input some DIII-D gfile')

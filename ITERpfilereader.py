@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xlrd
 
-
 iterpfile = '/home/calderhaubrich/Desktop/p_g_files/ITER/ITER_DT_15MA_Q10_peaked_n.txt'
 
 def ReadPfile(filepath):
